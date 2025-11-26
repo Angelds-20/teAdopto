@@ -1,0 +1,54 @@
+/* src/styles/App.css */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f7f7f7;
+}
+
+.header {
+  background: #2c3e50;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header nav a {
+  color: white;
+  margin-left: 1rem;
+  text-decoration: none;
+}
+
+.main {
+  padding: 2rem;
+}
+
+.login-form input {
+  display: block;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  width: 200px;
+}
+
+.login-form button {
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+}
+
+.error {
+  color: red;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  background: white;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 5px;
+}
