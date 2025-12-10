@@ -7,6 +7,8 @@ import { getMediaUrl } from "../utils/media";
 export default function Pets() {
   const { isAuthenticated, isAdmin, isShelter, isClient, user } = useAuth();
   const [pets, setPets] = useState([]);
+  const [pagination, setPagination] = useState({ count: 0, next: null, previous: null });
+  const [currentPage, setCurrentPage] = useState(1);
   const [shelters, setShelters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -34,21 +36,49 @@ export default function Pets() {
       setError(null);
       try {
         const promises = [
-          api.get("pets/"),
+          api.get(`pets/?page=${currentPage}`),
           api.get("shelters/").catch(() => ({ data: [] })),
         ];
-        
+
         if (isAuthenticated) {
           promises.push(
             api.get("adoptions/").catch(() => ({ data: [] }))
           );
         }
-        
+
         const results = await Promise.all(promises);
-        setPets(results[0].data);
-        setShelters(results[1].data || []);
+
+        // Handle both paginated and non-paginated responses
+        let petsData = [];
+        let paginationData = { count: 0, next: null, previous: null };
+
+        if (results[0].data && Array.isArray(results[0].data.results)) {
+          // Paginated response
+          petsData = results[0].data.results;
+          paginationData = {
+            count: results[0].data.count,
+            next: results[0].data.next,
+            previous: results[0].data.previous
+          };
+        } else if (Array.isArray(results[0].data)) {
+          // Non-paginated response (fallback)
+          petsData = results[0].data;
+          paginationData = {
+            count: results[0].data.length,
+            next: null,
+            previous: null
+          };
+        }
+
+        setPets(petsData);
+        setPagination(paginationData);
+
+        const sheltersData = results[1].data?.results || results[1].data || [];
+        setShelters(Array.isArray(sheltersData) ? sheltersData : []);
+
         if (isAuthenticated && results[2]) {
-          setAdoptionRequests(results[2].data || []);
+          const adoptionsData = results[2].data?.results || results[2].data || [];
+          setAdoptionRequests(Array.isArray(adoptionsData) ? adoptionsData : []);
         }
       } catch (err) {
         const detail =
@@ -61,7 +91,7 @@ export default function Pets() {
       }
     };
     fetchData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentPage]);
 
   const handlePhotoChange = (e) => {
     const files = Array.from(e.target.files);
@@ -106,7 +136,7 @@ export default function Pets() {
 
   const handlePetSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validar que se haya subido al menos una foto (solo para nuevas mascotas)
     if (!editingPet && petPhotos.length === 0) {
       alert("Por favor, sube al menos una foto de la mascota. Es requerida.");
@@ -125,20 +155,41 @@ export default function Pets() {
       if (petForm.size) formData.append('size', petForm.size);
       if (petForm.description) formData.append('description', petForm.description);
       formData.append('status', petForm.status);
-      
+
       petPhotos.forEach((photo) => {
         formData.append('photos', photo);
       });
 
       if (editingPet) {
+        // This should not be reached if we use the new route, but keeping for safety or refactoring
         await api.patch(`pets/${editingPet.id}/`, formData);
-        const petsRes = await api.get("pets/");
-        setPets(petsRes.data);
       } else {
         await api.post("pets/", formData);
-        const petsRes = await api.get("pets/");
-        setPets(petsRes.data);
       }
+      // Refresh current page
+      const petsRes = await api.get(`pets/?page=${currentPage}`);
+
+      let newPetsData = [];
+      let newPaginationData = { count: 0, next: null, previous: null };
+
+      if (petsRes.data && Array.isArray(petsRes.data.results)) {
+        newPetsData = petsRes.data.results;
+        newPaginationData = {
+          count: petsRes.data.count,
+          next: petsRes.data.next,
+          previous: petsRes.data.previous
+        };
+      } else if (Array.isArray(petsRes.data)) {
+        newPetsData = petsRes.data;
+        newPaginationData = {
+          count: petsRes.data.length,
+          next: null,
+          previous: null
+        };
+      }
+
+      setPets(newPetsData);
+      setPagination(newPaginationData);
       setShowPetForm(false);
       setEditingPet(null);
       setPetPhotos([]);
@@ -155,7 +206,7 @@ export default function Pets() {
       });
     } catch (err) {
       console.error("Error al guardar la mascota:", err);
-      const errorMsg = err.response?.data?.photo 
+      const errorMsg = err.response?.data?.photo
         ? `Error en la foto: ${err.response.data.photo[0]}`
         : err.response?.data?.detail || "Error al guardar la mascota. Verifica los datos.";
       alert(errorMsg);
@@ -196,8 +247,8 @@ export default function Pets() {
       if (err.response?.data) {
         console.error("Datos de error:", err.response.data);
         if (err.response.data.detail) {
-          errorMsg = Array.isArray(err.response.data.detail) 
-            ? err.response.data.detail[0] 
+          errorMsg = Array.isArray(err.response.data.detail)
+            ? err.response.data.detail[0]
             : err.response.data.detail;
         } else if (err.response.data.non_field_errors) {
           errorMsg = Array.isArray(err.response.data.non_field_errors)
@@ -281,10 +332,10 @@ export default function Pets() {
         <h2>Encuentra a tu compañero perfecto</h2>
         <p>Explora las mascotas disponibles que están buscando un hogar lleno de amor.</p>
         {(isShelter || isClient) && (
-                 <button
-                   className="btn btn--primary"
-                   style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-                   onClick={() => {
+          <button
+            className="btn btn--primary"
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            onClick={() => {
               setEditingPet(null);
               setPetPhotos([]);
               setPhotoPreviews([]);
@@ -301,7 +352,7 @@ export default function Pets() {
               setShowPetForm(true);
             }}
           >
-                   ➕ Nueva mascota
+            ➕ Nueva mascota
           </button>
         )}
         {!isAuthenticated && (
@@ -386,7 +437,7 @@ export default function Pets() {
                 onChange={(e) =>
                   setPetForm((prev) => ({ ...prev, size: e.target.value }))
                 }
-                  placeholder="Ejemplo: Mediano"
+                placeholder="Ejemplo: Mediano"
               />
             </label>
             <label>
@@ -429,16 +480,16 @@ export default function Pets() {
                 <div style={{ marginTop: "1rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                   {photoPreviews.map((preview, index) => (
                     <div key={index} style={{ position: "relative" }}>
-                      <img 
-                        src={preview} 
-                        alt={`Vista previa ${index + 1}`} 
-                        style={{ 
-                          width: "120px", 
-                          height: "120px", 
+                      <img
+                        src={preview}
+                        alt={`Vista previa ${index + 1}`}
+                        style={{
+                          width: "120px",
+                          height: "120px",
                           borderRadius: "0.5rem",
                           objectFit: "cover",
                           border: "2px solid #e2e8f0"
-                        }} 
+                        }}
                       />
                       <button
                         type="button"
@@ -473,17 +524,17 @@ export default function Pets() {
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                     {editingPet.photos.map((photo, index) => (
-                      <img 
+                      <img
                         key={index}
-                        src={photo.photo_url || photo.photo} 
-                        alt={`${editingPet.name} ${index + 1}`} 
-                        style={{ 
-                          width: "120px", 
-                          height: "120px", 
+                        src={photo.photo_url || photo.photo}
+                        alt={`${editingPet.name} ${index + 1}`}
+                        style={{
+                          width: "120px",
+                          height: "120px",
                           borderRadius: "0.5rem",
                           objectFit: "cover",
                           border: "2px solid #e2e8f0"
-                        }} 
+                        }}
                       />
                     ))}
                   </div>
@@ -521,12 +572,13 @@ export default function Pets() {
       <div className="pet-grid">
         {pets.map((pet) => (
           <article key={pet.id} className="pet-card">
-            {pet.photos && pet.photos.length > 0 ? (
+            {Array.isArray(pet.photos) && pet.photos.length > 0 ? (
               <div style={{ position: "relative", width: "100%", height: "200px", overflow: "hidden", borderRadius: "0.5rem 0.5rem 0 0" }}>
-                <img 
-                  src={pet.photos[0].photo_url || pet.photos[0].photo} 
+                <img
+                  src={pet.photos[0]?.photo_url || pet.photos[0]?.photo}
                   alt={pet.name}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x300?text=No+Image"; }}
                 />
                 {pet.photos.length > 1 && (
                   <div style={{
@@ -544,10 +596,11 @@ export default function Pets() {
                 )}
               </div>
             ) : pet.photo ? (
-              <img 
-                src={getMediaUrl(pet.photo)} 
+              <img
+                src={getMediaUrl(pet.photo) || "https://via.placeholder.com/400x300?text=No+Image"}
                 alt={pet.name}
                 style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "0.5rem 0.5rem 0 0" }}
+                onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x300?text=No+Image"; }}
               />
             ) : (
               <div className="pet-card__placeholder">
@@ -597,28 +650,13 @@ export default function Pets() {
                 )}
                 {canEditPet(pet) && (
                   <>
-                    <button
+                    <Link
+                      to={`/pets/edit/${pet.id}`}
                       className="btn btn--ghost"
-                      style={{ fontSize: "0.9rem" }}
-                      onClick={() => {
-                        setEditingPet(pet);
-                        setPetPhotos([]);
-                        setPhotoPreviews([]);
-                        setPetForm({
-                          name: pet.name,
-                          pet_type: pet.pet_type,
-                          breed: pet.breed || "",
-                          age: pet.age || "",
-                          age_unit: pet.age_unit || "years",
-                          size: pet.size || "",
-                          description: pet.description || "",
-                          status: pet.status,
-                        });
-                        setShowPetForm(true);
-                      }}
+                      style={{ fontSize: "0.9rem", textDecoration: "none" }}
                     >
                       Editar
-                    </button>
+                    </Link>
                     <button
                       className="btn btn--danger"
                       style={{ fontSize: "0.9rem" }}
@@ -665,6 +703,29 @@ export default function Pets() {
             </div>
           </article>
         ))}
+      </div>
+
+      {/* Pagination Controls */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "2rem" }}>
+        <button
+          className="btn btn--ghost"
+          disabled={!pagination.previous}
+          onClick={() => setCurrentPage(prev => prev - 1)}
+          style={{ opacity: !pagination.previous ? 0.5 : 1 }}
+        >
+          Anterior
+        </button>
+        <span style={{ display: "flex", alignItems: "center" }}>
+          Página {currentPage}
+        </span>
+        <button
+          className="btn btn--ghost"
+          disabled={!pagination.next}
+          onClick={() => setCurrentPage(prev => prev + 1)}
+          style={{ opacity: !pagination.next ? 0.5 : 1 }}
+        >
+          Siguiente
+        </button>
       </div>
     </section>
   );

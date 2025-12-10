@@ -29,10 +29,10 @@ export default function Angel() {
         api.get("adoptions/").catch(() => ({ data: [] })),
       ]);
       setStats({
-        users: Array.isArray(usersRes.data) ? usersRes.data.length : 0,
-        pets: Array.isArray(petsRes.data) ? petsRes.data.length : 0,
-        shelters: Array.isArray(sheltersRes.data) ? sheltersRes.data.length : 0,
-        adoptions: Array.isArray(adoptionsRes.data) ? adoptionsRes.data.length : 0,
+        users: usersRes.data.count || (Array.isArray(usersRes.data) ? usersRes.data.length : 0),
+        pets: petsRes.data.count || 0,
+        shelters: sheltersRes.data.count || (Array.isArray(sheltersRes.data) ? sheltersRes.data.length : 0),
+        adoptions: adoptionsRes.data.count || (Array.isArray(adoptionsRes.data) ? adoptionsRes.data.length : 0),
       });
     } catch (err) {
       console.error("Error al cargar estadísticas:", err);
@@ -43,7 +43,7 @@ export default function Angel() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    
+
     try {
       const success = await login(credentials);
       if (success) {
@@ -105,52 +105,52 @@ export default function Angel() {
     <>
       <NavBar />
       <section className="adoptions">
-      <header>
-        <p className="eyebrow">👑 Panel de Administración</p>
-        <h2>Bienvenido, {user?.username}</h2>
-        <p>Gestión completa del sistema TeAdopto</p>
-      </header>
+        <header>
+          <p className="eyebrow">👑 Panel de Administración</p>
+          <h2>Bienvenido, {user?.username}</h2>
+          <p>Gestión completa del sistema TeAdopto</p>
+        </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
-        <div className="card" style={{ textAlign: "center" }}>
-          <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.users}</h3>
-          <p>Usuarios</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
+          <div className="card" style={{ textAlign: "center" }}>
+            <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.users}</h3>
+            <p>Usuarios</p>
+          </div>
+          <div className="card" style={{ textAlign: "center" }}>
+            <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.pets}</h3>
+            <p>Mascotas</p>
+          </div>
+          <div className="card" style={{ textAlign: "center" }}>
+            <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.shelters}</h3>
+            <p>Refugios</p>
+          </div>
+          <div className="card" style={{ textAlign: "center" }}>
+            <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.adoptions}</h3>
+            <p>Solicitudes</p>
+          </div>
         </div>
-        <div className="card" style={{ textAlign: "center" }}>
-          <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.pets}</h3>
-          <p>Mascotas</p>
-        </div>
-        <div className="card" style={{ textAlign: "center" }}>
-          <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.shelters}</h3>
-          <p>Refugios</p>
-        </div>
-        <div className="card" style={{ textAlign: "center" }}>
-          <h3 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>{stats.adoptions}</h3>
-          <p>Solicitudes</p>
-        </div>
-      </div>
 
-      <div style={{ marginTop: "2rem" }}>
-        <h3>Accesos Rápidos</h3>
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "1rem" }}>
-          <button className="btn btn--primary" onClick={() => navigate("/pets")}>
-            Ver Mascotas
-          </button>
-          <button className="btn btn--primary" onClick={() => navigate("/shelters")}>
-            Ver Refugios
-          </button>
-          <button className="btn btn--primary" onClick={() => navigate("/adoptions")}>
-            Ver Solicitudes
-          </button>
-          <button className="btn btn--primary" onClick={() => navigate("/users")}>
-            Ver Usuarios
-          </button>
-          <a href={getAdminUrl()} target="_blank" rel="noopener noreferrer" className="btn btn--primary">
-            Django Admin
-          </a>
+        <div style={{ marginTop: "2rem" }}>
+          <h3>Accesos Rápidos</h3>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "1rem" }}>
+            <button className="btn btn--primary" onClick={() => navigate("/pets")}>
+              Ver Mascotas
+            </button>
+            <button className="btn btn--primary" onClick={() => navigate("/shelters")}>
+              Ver Refugios
+            </button>
+            <button className="btn btn--primary" onClick={() => navigate("/adoptions")}>
+              Ver Solicitudes
+            </button>
+            <button className="btn btn--primary" onClick={() => navigate("/users")}>
+              Ver Usuarios
+            </button>
+            <a href={getAdminUrl()} target="_blank" rel="noopener noreferrer" className="btn btn--primary">
+              Django Admin
+            </a>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
     </>
   );
 }

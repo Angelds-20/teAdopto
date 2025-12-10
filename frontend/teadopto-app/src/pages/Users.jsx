@@ -7,16 +7,11 @@ export default function Users() {
   const navigate = useNavigate();
   const { isAuthenticated, isAdmin } = useAuth();
   const [users, setUsers] = useState([]);
+  const [pagination, setPagination] = useState({ count: 0, next: null, previous: null });
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showUserForm, setShowUserForm] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [userForm, setUserForm] = useState({
-    username: "",
-    email: "",
-    role: "client",
-    phone: "",
-  });
+
 
   useEffect(() => {
     if (!isAuthenticated || !isAdmin) return;
@@ -24,8 +19,14 @@ export default function Users() {
       setLoading(true);
       setError(null);
       try {
-        const { data } = await api.get("users/");
-        setUsers(data);
+        const { data } = await api.get(`users/?page=${currentPage}`);
+        const usersData = data.results || data || [];
+        setUsers(Array.isArray(usersData) ? usersData : []);
+        setPagination({
+          count: data.count || (Array.isArray(data) ? data.length : 0),
+          next: data.next || null,
+          previous: data.previous || null
+        });
       } catch (err) {
         const detail =
           err.response?.status === 401
@@ -37,29 +38,9 @@ export default function Users() {
       }
     };
     fetchUsers();
-  }, [isAuthenticated, isAdmin]);
+  }, [isAuthenticated, isAdmin, currentPage]);
 
-  const handleUserSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingUser) {
-        await api.patch(`users/${editingUser.id}/`, userForm);
-        setUsers((prev) =>
-          prev.map((u) => (u.id === editingUser.id ? { ...u, ...userForm } : u))
-        );
-      }
-      setShowUserForm(false);
-      setEditingUser(null);
-      setUserForm({
-        username: "",
-        email: "",
-        role: "client",
-        phone: "",
-      });
-    } catch (err) {
-      alert("Error al guardar el usuario. " + (err.response?.data?.detail || ""));
-    }
-  };
+
 
   const handleDeleteUser = async (userId) => {
     if (!window.confirm("¿Eliminar este usuario? Esta acción no se puede deshacer.")) return;
@@ -114,78 +95,7 @@ export default function Users() {
         </p>
       </header>
 
-      {showUserForm && editingUser && (
-        <div className="card form-card" style={{ marginTop: "2rem" }}>
-          <h3>Editar usuario</h3>
-          <form onSubmit={handleUserSubmit} className="form">
-            <label>
-              Usuario
-              <input
-                type="text"
-                value={userForm.username}
-                onChange={(e) =>
-                  setUserForm((prev) => ({ ...prev, username: e.target.value }))
-                }
-                required
-                disabled
-                style={{ background: "#f1f5f9", cursor: "not-allowed" }}
-              />
-              <small className="form__hint">El nombre de usuario no se puede cambiar</small>
-            </label>
-            <label>
-              Email *
-              <input
-                type="email"
-                value={userForm.email}
-                onChange={(e) =>
-                  setUserForm((prev) => ({ ...prev, email: e.target.value }))
-                }
-                required
-              />
-            </label>
-            <label>
-              Rol *
-              <select
-                value={userForm.role}
-                onChange={(e) =>
-                  setUserForm((prev) => ({ ...prev, role: e.target.value }))
-                }
-                required
-              >
-                <option value="client">Cliente</option>
-                <option value="shelter">Refugio</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </label>
-            <label>
-              Teléfono
-              <input
-                type="tel"
-                value={userForm.phone}
-                onChange={(e) =>
-                  setUserForm((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="+56912345678"
-              />
-            </label>
-            <div className="hero-card__actions">
-              <button type="submit" className="btn btn--primary">
-                Guardar cambios
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => {
-                  setShowUserForm(false);
-                  setEditingUser(null);
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+
 
       {loading && <p className="loading">Cargando usuarios...</p>}
       {error && <p className="form__error">{error}</p>}
@@ -210,22 +120,13 @@ export default function Users() {
               </p>
             )}
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
-              <button
+              <Link
+                to={`/users/edit/${user.id}`}
                 className="btn btn--ghost"
-                style={{ fontSize: "0.9rem" }}
-                onClick={() => {
-                  setEditingUser(user);
-                  setUserForm({
-                    username: user.username,
-                    email: user.email || "",
-                    role: user.role,
-                    phone: user.phone || "",
-                  });
-                  setShowUserForm(true);
-                }}
+                style={{ fontSize: "0.9rem", textDecoration: "none" }}
               >
                 Editar
-              </button>
+              </Link>
               <button
                 className="btn btn--danger"
                 style={{ fontSize: "0.9rem" }}
@@ -236,6 +137,29 @@ export default function Users() {
             </div>
           </article>
         ))}
+      </div>
+
+      {/* Pagination Controls */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "2rem" }}>
+        <button
+          className="btn btn--ghost"
+          disabled={!pagination.previous}
+          onClick={() => setCurrentPage(prev => prev - 1)}
+          style={{ opacity: !pagination.previous ? 0.5 : 1 }}
+        >
+          Anterior
+        </button>
+        <span style={{ display: "flex", alignItems: "center" }}>
+          Página {currentPage}
+        </span>
+        <button
+          className="btn btn--ghost"
+          disabled={!pagination.next}
+          onClick={() => setCurrentPage(prev => prev + 1)}
+          style={{ opacity: !pagination.next ? 0.5 : 1 }}
+        >
+          Siguiente
+        </button>
       </div>
     </section>
   );

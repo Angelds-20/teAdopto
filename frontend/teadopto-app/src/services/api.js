@@ -20,4 +20,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Dispatch a custom event so AuthContext can handle logout
+      window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

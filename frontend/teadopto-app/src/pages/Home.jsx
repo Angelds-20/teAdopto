@@ -20,7 +20,8 @@ export default function Home() {
       try {
         const petsRes = await api.get("pets/");
         // Filtrar solo mascotas disponibles
-        const availablePets = (petsRes.data || []).filter(pet => pet.status === "available");
+        const petsData = petsRes.data.results || [];
+        const availablePets = petsData.filter(pet => pet.status === "available");
         setPets(availablePets);
       } catch (err) {
         console.error("Error al cargar mascotas:", err);
@@ -44,7 +45,7 @@ export default function Home() {
   // Auto-rotación del carousel cada 5 segundos
   useEffect(() => {
     if (pets.length <= 1) return;
-    
+
     const interval = setInterval(() => {
       setCurrentPetIndex((prevIndex) => (prevIndex + 1) % pets.length);
     }, 5000);
@@ -55,18 +56,18 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       setStatsState({ loading: true, error: null });
-      
+
       // Inicializar con valores por defecto
       let petsCount = 0;
       let sheltersCount = 0;
       let adoptionsCount = 0;
       let hasError = false;
       let errorMessages = [];
-      
+
       // Cargar mascotas (público)
       try {
         const petsRes = await api.get("pets/");
-        petsCount = Array.isArray(petsRes.data) ? petsRes.data.length : 0;
+        petsCount = petsRes.data.count || 0;
       } catch (err) {
         console.error("Error al cargar mascotas:", err);
         console.error("Detalles del error:", {
@@ -78,11 +79,11 @@ export default function Home() {
         hasError = true;
         errorMessages.push("mascotas");
       }
-      
+
       // Cargar refugios (público)
       try {
         const sheltersRes = await api.get("shelters/");
-        sheltersCount = Array.isArray(sheltersRes.data) ? sheltersRes.data.length : 0;
+        sheltersCount = sheltersRes.data.count || (Array.isArray(sheltersRes.data) ? sheltersRes.data.length : 0);
       } catch (err) {
         console.error("Error al cargar refugios:", err);
         console.error("Detalles del error:", {
@@ -94,36 +95,36 @@ export default function Home() {
         hasError = true;
         errorMessages.push("refugios");
       }
-      
+
       // Cargar adopciones solo si está autenticado
       if (isAuthenticated) {
         try {
           const adoptionsRes = await api.get("adoptions/");
-          adoptionsCount = Array.isArray(adoptionsRes.data) ? adoptionsRes.data.length : 0;
+          adoptionsCount = adoptionsRes.data.count || (Array.isArray(adoptionsRes.data) ? adoptionsRes.data.length : 0);
         } catch (err) {
           console.error("Error al cargar adopciones:", err);
           // No marcamos error si fallan las adopciones, solo no las mostramos
         }
       }
-      
+
       // Actualizar estadísticas con lo que se pudo cargar
       setStats({
         pets: petsCount,
         shelters: sheltersCount,
         adoptions: adoptionsCount,
       });
-      
+
       // Solo mostrar error si fallaron todas las métricas
       if (hasError && petsCount === 0 && sheltersCount === 0) {
-        setStatsState({ 
-          loading: false, 
-          error: `No se pudieron cargar las métricas de ${errorMessages.join(" y ")}. Verifica que el backend esté corriendo.` 
+        setStatsState({
+          loading: false,
+          error: `No se pudieron cargar las métricas de ${errorMessages.join(" y ")}. Verifica que el backend esté corriendo.`
         });
       } else {
         setStatsState({ loading: false, error: null });
       }
     };
-    
+
     fetchStats();
   }, [isAuthenticated]);
 
@@ -136,7 +137,7 @@ export default function Home() {
             <span className="hero-word hero-word--adoption">Adopción</span> segura. Un <span className="hero-word hero-word--home">hogar</span> para cada espera.
           </h1>
           <p className="hero-card__lead">
-            Únete a nuestra comunidad y ayuda a las mascotas a encontrar un hogar lleno de amor. 
+            Únete a nuestra comunidad y ayuda a las mascotas a encontrar un hogar lleno de amor.
             Explora perfiles detallados, conoce refugios verificados y forma parte de historias de adopción exitosas.
           </p>
           <div className="hero-card__actions">
@@ -188,7 +189,7 @@ export default function Home() {
       {/* Widget dinámico de mascotas en adopción */}
       {pets.length > 0 && (
         <div className="card" style={{ marginTop: "3rem", padding: "0", overflow: "hidden" }}>
-          <div style={{ 
+          <div style={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             padding: "2rem",
             color: "white",
@@ -212,10 +213,10 @@ export default function Home() {
               <>
                 {pets.map((pet, index) => {
                   const isActive = index === currentPetIndex;
-                  const petPhoto = pet.photos && pet.photos.length > 0 
+                  const petPhoto = pet.photos && pet.photos.length > 0
                     ? (pet.photos[0].photo_url || pet.photos[0].photo)
                     : (pet.photo ? getMediaUrl(pet.photo) : null);
-                  
+
                   return (
                     <div
                       key={pet.id}
@@ -224,24 +225,24 @@ export default function Home() {
                         padding: "2rem",
                       }}
                     >
-                      <div style={{ 
-                        display: "grid", 
-                        gridTemplateColumns: windowWidth < 768 ? "1fr" : "1fr 1fr", 
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: windowWidth < 768 ? "1fr" : "1fr 1fr",
                         gap: "2rem",
                         alignItems: "center"
                       }}>
-                        <div style={{ 
-                          borderRadius: "1rem", 
+                        <div style={{
+                          borderRadius: "1rem",
                           overflow: "hidden",
                           boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
                         }}>
                           {petPhoto ? (
-                            <img 
+                            <img
                               src={petPhoto}
                               alt={pet.name}
-                              style={{ 
-                                width: "100%", 
-                                height: "350px", 
+                              style={{
+                                width: "100%",
+                                height: "350px",
                                 objectFit: "cover",
                                 display: "block"
                               }}
@@ -291,20 +292,20 @@ export default function Home() {
                             </p>
                           )}
                           {pet.description && (
-                            <p style={{ 
-                              color: "#475569", 
+                            <p style={{
+                              color: "#475569",
                               margin: "1rem 0",
                               lineHeight: "1.6",
                               fontSize: "1rem"
                             }}>
-                              {pet.description.length > 150 
-                                ? `${pet.description.substring(0, 150)}...` 
+                              {pet.description.length > 150
+                                ? `${pet.description.substring(0, 150)}...`
                                 : pet.description}
                             </p>
                           )}
                           <div style={{ marginTop: "1.5rem" }}>
-                            <Link 
-                              to="/pets" 
+                            <Link
+                              to="/pets"
                               className="btn btn--primary"
                               style={{ display: "inline-block" }}
                             >

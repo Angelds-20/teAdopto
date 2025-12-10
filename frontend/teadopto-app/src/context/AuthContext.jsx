@@ -48,25 +48,25 @@ export function AuthProvider({ children }) {
       // Esto permite que usuarios existentes (creados antes) funcionen
       const trimmedUsername = username.trim();
       let loginData;
-      
+
       try {
         // Intentar primero con el username tal cual
-        loginData = await api.post("login/", { 
-          username: trimmedUsername, 
-          password: password 
+        loginData = await api.post("login/", {
+          username: trimmedUsername,
+          password: password
         });
       } catch (firstError) {
         // Si falla, intentar con minúsculas (para usuarios nuevos)
         if (firstError.response?.status === 401) {
-          loginData = await api.post("login/", { 
-            username: trimmedUsername.toLowerCase(), 
-            password: password 
+          loginData = await api.post("login/", {
+            username: trimmedUsername.toLowerCase(),
+            password: password
           });
         } else {
           throw firstError;
         }
       }
-      
+
       const { data } = loginData;
       // Obtener perfil completo del usuario
       const tempApi = api;
@@ -103,6 +103,17 @@ export function AuthProvider({ children }) {
   const clearAuthError = useCallback(() => {
     setStatus((prev) => ({ ...prev, error: null }));
   }, []);
+
+  // Listen for 401 events from api interceptor
+  React.useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
+  }, [logout]);
 
   const value = useMemo(
     () => ({

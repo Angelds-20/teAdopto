@@ -1,0 +1,191 @@
+Nombre del Proyecto: teAdopto
+Documento de Referencia: Documento de Requerimientos teAdopto
+Creado Por: Equipo de Testing
+Fecha de Creación: 01-dic-24
+
+================================================================================
+CASOS DE PRUEBA - TEADOPTO
+================================================================================
+
+Son 4 casos de prueba de CRUD
+1 caso de prueba de control de acceso de los usuarios al software
+1 caso de prueba relacionado con la validación de campos sobre un formulario a completar
+
+================================================================================
+
+ID: CRUD-001
+NOMBRE: Registrar nueva mascota en el sistema
+DESCRIPCIÓN: Verificar que el administrador o refugio pueda agregar nuevas mascotas al sistema (CREATE)
+PRECONDICIONES: 
+  - Estar logueado como administrador o refugio
+  - Estar en la página de gestión de mascotas
+
+PASOS:
+  1) Seleccionar la opción "Agregar mascota"
+  2) Ingresar los siguientes datos:
+     - Nombre: "Max"
+     - Tipo: "Perro"
+     - Raza: "Golden Retriever"
+     - Edad: "2"
+     - Unidad de edad: "Años"
+     - Tamaño: "Grande"
+     - Descripción: "Perro muy amigable y juguetón."
+     - Estado: "Disponible"
+  3) Clickear en "Guardar"
+
+RESULTADO ESPERADO:
+  1) Todos los campos pueden completarse
+  2) La mascota es guardada en la base de datos
+  3) La mascota aparece en el listado de mascotas disponibles
+  4) Se muestra un mensaje de confirmación
+  5) El formulario queda en blanco
+
+RESULTADO ACTUAL: Requiere envío 2
+ESTADO: Rechazado 2
+REFERENCIAS: Requerimiento funcional - Gestión de mascotas
+
+--------------------------------------------------------------------------------
+
+ID: CRUD-002
+NOMBRE: Visualizar perfil de mascota
+DESCRIPCIÓN: Verificar que el usuario pueda ver los detalles completos de una mascota (READ)
+PRECONDICIONES:
+  - Estar logueado en el sistema
+  - Existir al menos una mascota registrada en el sistema
+
+PASOS:
+  1) Ingresar a la página principal
+  2) Seleccionar una mascota del listado
+  3) Clickear en "Ver detalles"
+
+RESULTADO ESPERADO:
+  1) La página de detalles se muestra correctamente
+  2) Se visualiza la siguiente información:
+     - Nombre, Tipo y Raza
+     - Edad y Tamaño
+     - Refugio o Dueño asociado
+     - Estado (Disponible/Adoptado)
+     - Fotografía de la mascota
+     - Descripción
+  3) Todos los datos están alineados y son legibles
+
+RESULTADO ACTUAL: Requiere envío 2
+ESTADO: Rechazado 2
+REFERENCIAS: Requerimiento funcional - Visualización de mascotas
+
+--------------------------------------------------------------------------------
+
+ID: CRUD-003
+NOMBRE: Editar perfil de mascota
+DESCRIPCIÓN: Verificar que el administrador o refugio pueda modificar los datos de una mascota (UPDATE)
+PRECONDICIONES:
+  - Estar logueado como administrador o refugio
+  - Existir al menos una mascota registrada (CRUD-001)
+
+PASOS:
+  1) Ingresar a la página de gestión de mascotas
+  2) Seleccionar una mascota del listado
+  3) Clickear en "Editar"
+  4) Modificar los siguientes datos:
+     - Descripción: "Ahora está vacunado y listo para ir a casa."
+     - Estado: "Adoptado"
+  5) Clickear en "Guardar cambios"
+
+RESULTADO ESPERADO:
+  1) Los campos se pueden modificar correctamente
+  2) Los cambios son guardados en la base de datos
+  3) Se muestra un mensaje de confirmación
+  4) Al visualizar la mascota, los datos actualizados se muestran correctamente
+
+RESULTADO ACTUAL: Requiere envío 2
+ESTADO: Rechazado 2
+REFERENCIAS: Requerimiento funcional - Gestión de mascotas
+
+--------------------------------------------------------------------------------
+
+ID: CRUD-004
+NOMBRE: Eliminar registro de mascota
+DESCRIPCIÓN: Verificar que el administrador pueda eliminar mascotas del sistema (DELETE)
+PRECONDICIONES:
+  - Estar logueado como administrador
+  - Existir al menos una mascota registrada
+
+PASOS:
+  1) Ingresar a la página de gestión de mascotas
+  2) Seleccionar una mascota del listado
+  3) Clickear en "Eliminar"
+  4) Confirmar la eliminación en el diálogo de confirmación
+
+RESULTADO ESPERADO:
+  1) Se muestra un diálogo de confirmación
+  2) Al confirmar, la mascota es eliminada de la base de datos
+  3) La mascota ya no aparece en el listado
+  4) Se muestra un mensaje de confirmación de eliminación
+
+RESULTADO ACTUAL: Requiere envío 2
+ESTADO: Rechazado 2
+REFERENCIAS: Requerimiento funcional - Gestión de mascotas
+
+================================================================================
+
+ID: ACC-001
+NOMBRE: Control de acceso - Credenciales inválidas
+DESCRIPCIÓN: Verificar que el sistema rechace intentos de inicio de sesión con credenciales incorrectas
+PRECONDICIONES:
+  - Estar en la página de inicio de sesión
+  - Tener un usuario registrado en el sistema
+
+PASOS:
+  1) Ingresar a la página de login
+  2) Ingresar los siguientes datos:
+     - Email: "usuario@ejemplo.com"
+     - Contraseña: "contraseña_incorrecta"
+  3) Clickear en "Iniciar sesión"
+
+RESULTADO ESPERADO:
+  1) Los datos son ingresados correctamente
+  2) El sistema valida las credenciales
+  3) Se muestra un mensaje de error indicando "Credenciales incorrectas"
+  4) No se inicia sesión
+  5) El usuario permanece en la página de login
+
+RESULTADO ACTUAL: Requiere envío 2
+ESTADO: Rechazado 2
+REFERENCIAS: Requerimiento de seguridad - Autenticación
+
+================================================================================
+
+ID: VAL-001
+NOMBRE: Validación de campos obligatorios en formulario de registro
+DESCRIPCIÓN: Verificar que no se puedan guardar datos si los campos obligatorios están vacíos
+PRECONDICIONES:
+  - Estar en la página de registro de usuarios
+
+PASOS:
+  1) Ingresar a la página de registro
+  2) Verificar que los campos "Nombre", "Email" y "Contraseña" contengan un asterisco (*)
+  3) Ingresar los siguientes datos:
+     - Nombre: "" (vacío)
+     - Email: "usuario@ejemplo.com"
+     - Contraseña: "MiContraseña123"
+  4) Clickear en "Registrarse"
+
+RESULTADO ESPERADO:
+  1) Los campos obligatorios muestran un asterisco (*)
+  2) Los datos son ingresados
+  3) Al intentar guardar, se muestra un error indicando "El campo Nombre es obligatorio"
+  4) Los datos no son guardados
+  5) El usuario permanece en el formulario de registro
+
+RESULTADO ACTUAL: Requiere envío 2
+ESTADO: Rechazado 2
+REFERENCIAS: Requerimiento funcional - Validación de formularios
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
+
+Total de casos de prueba: 6
+  - 4 casos CRUD (CREATE, READ, UPDATE, DELETE)
+  - 1 caso de control de acceso
+  - 1 caso de validación de campos

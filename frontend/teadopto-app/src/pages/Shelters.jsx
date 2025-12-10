@@ -7,6 +7,8 @@ import { getMediaUrl } from "../utils/media";
 export default function Shelters() {
   const { isAuthenticated, isAdmin } = useAuth();
   const [shelters, setShelters] = useState([]);
+  const [pagination, setPagination] = useState({ count: 0, next: null, previous: null });
+  const [currentPage, setCurrentPage] = useState(1);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -27,12 +29,21 @@ export default function Shelters() {
       setError(null);
       try {
         const [sheltersRes, usersRes] = await Promise.all([
-          api.get("shelters/"),
+          api.get(`shelters/?page=${currentPage}`),
           isAdmin && isAuthenticated ? api.get("users/") : Promise.resolve({ data: [] }),
         ]);
-        setShelters(sheltersRes.data);
+
+        const sheltersData = sheltersRes.data.results || sheltersRes.data || [];
+        setShelters(Array.isArray(sheltersData) ? sheltersData : []);
+        setPagination({
+          count: sheltersRes.data.count || (Array.isArray(sheltersRes.data) ? sheltersRes.data.length : 0),
+          next: sheltersRes.data.next || null,
+          previous: sheltersRes.data.previous || null
+        });
+
         if (isAdmin && isAuthenticated) {
-          setUsers(usersRes.data.filter((u) => u.role === "shelter"));
+          const usersData = usersRes.data.results || usersRes.data || [];
+          setUsers(Array.isArray(usersData) ? usersData.filter((u) => u.role === "shelter") : []);
         }
       } catch (err) {
         const detail =
@@ -45,7 +56,7 @@ export default function Shelters() {
       }
     };
     fetchData();
-  }, [isAuthenticated, isAdmin]);
+  }, [isAuthenticated, isAdmin, currentPage]);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -75,7 +86,7 @@ export default function Shelters() {
       if (shelterForm.address) formData.append('address', shelterForm.address);
       formData.append('verified', shelterForm.verified);
       if (shelterForm.user) formData.append('user', shelterForm.user);
-      
+
       if (shelterPhoto) {
         formData.append('photo', shelterPhoto);
       }
@@ -102,8 +113,14 @@ export default function Shelters() {
         user: "",
       });
       // Recargar datos
-      const sheltersRes = await api.get("shelters/");
-      setShelters(sheltersRes.data);
+      const sheltersRes = await api.get(`shelters/?page=${currentPage}`);
+      const sheltersData = sheltersRes.data.results || sheltersRes.data || [];
+      setShelters(Array.isArray(sheltersData) ? sheltersData : []);
+      setPagination({
+        count: sheltersRes.data.count || (Array.isArray(sheltersRes.data) ? sheltersRes.data.length : 0),
+        next: sheltersRes.data.next || null,
+        previous: sheltersRes.data.previous || null
+      });
     } catch (err) {
       alert("Error al guardar el refugio. " + (err.response?.data?.detail || ""));
     }
@@ -129,20 +146,20 @@ export default function Shelters() {
         {isAdmin && (
           <button
             className="btn btn--primary"
-              onClick={() => {
-                setEditingShelter(null);
-                setShelterPhoto(null);
-                setPhotoPreview(null);
-                setShelterForm({
-                  name: "",
-                  address: "",
-                  verified: false,
-                  user: "",
-                });
-                setShowShelterForm(true);
-              }}
+            onClick={() => {
+              setEditingShelter(null);
+              setShelterPhoto(null);
+              setPhotoPreview(null);
+              setShelterForm({
+                name: "",
+                address: "",
+                verified: false,
+                user: "",
+              });
+              setShowShelterForm(true);
+            }}
           >
-                   ➕ Nuevo refugio
+            ➕ Nuevo refugio
           </button>
         )}
       </header>
@@ -212,15 +229,15 @@ export default function Shelters() {
               </small>
               {photoPreview && (
                 <div style={{ marginTop: "1rem" }}>
-                  <img 
-                    src={photoPreview} 
-                    alt="Vista previa" 
-                    style={{ 
-                      maxWidth: "200px", 
-                      maxHeight: "200px", 
+                  <img
+                    src={photoPreview}
+                    alt="Vista previa"
+                    style={{
+                      maxWidth: "200px",
+                      maxHeight: "200px",
                       borderRadius: "0.5rem",
                       objectFit: "cover"
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -229,15 +246,15 @@ export default function Shelters() {
                   <p style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "0.5rem" }}>
                     Foto actual:
                   </p>
-                  <img 
-                    src={getMediaUrl(editingShelter.photo)} 
-                    alt={editingShelter.name} 
-                    style={{ 
-                      maxWidth: "200px", 
-                      maxHeight: "200px", 
+                  <img
+                    src={getMediaUrl(editingShelter.photo)}
+                    alt={editingShelter.name}
+                    style={{
+                      maxWidth: "200px",
+                      maxHeight: "200px",
                       borderRadius: "0.5rem",
                       objectFit: "cover"
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -272,16 +289,16 @@ export default function Shelters() {
         {shelters.map((shelter) => (
           <article key={shelter.id} className="card shelter-card">
             {shelter.photo && (
-              <img 
-                src={getMediaUrl(shelter.photo)} 
+              <img
+                src={getMediaUrl(shelter.photo)}
                 alt={shelter.name}
-                style={{ 
-                  width: "100%", 
-                  height: "200px", 
-                  objectFit: "cover", 
+                style={{
+                  width: "100%",
+                  height: "200px",
+                  objectFit: "cover",
                   borderRadius: "0.5rem 0.5rem 0 0",
                   marginBottom: "1rem"
-                }} 
+                }}
               />
             )}
             <h3>{shelter.name}</h3>
@@ -292,24 +309,13 @@ export default function Shelters() {
             </p>
             {isAdmin && (
               <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
-                <button
+                <Link
+                  to={`/shelters/edit/${shelter.id}`}
                   className="btn btn--ghost"
-                  style={{ fontSize: "0.9rem" }}
-                  onClick={() => {
-                    setEditingShelter(shelter);
-                    setShelterForm({
-                      name: shelter.name,
-                      address: shelter.address || "",
-                      verified: shelter.verified,
-                      user: shelter.user || "",
-                    });
-                    setShelterPhoto(null);
-                    setPhotoPreview(null);
-                    setShowShelterForm(true);
-                  }}
+                  style={{ fontSize: "0.9rem", textDecoration: "none" }}
                 >
                   Editar
-                </button>
+                </Link>
                 <button
                   className="btn btn--danger"
                   style={{ fontSize: "0.9rem" }}
@@ -321,6 +327,29 @@ export default function Shelters() {
             )}
           </article>
         ))}
+      </div>
+
+      {/* Pagination Controls */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "2rem" }}>
+        <button
+          className="btn btn--ghost"
+          disabled={!pagination.previous}
+          onClick={() => setCurrentPage(prev => prev - 1)}
+          style={{ opacity: !pagination.previous ? 0.5 : 1 }}
+        >
+          Anterior
+        </button>
+        <span style={{ display: "flex", alignItems: "center" }}>
+          Página {currentPage}
+        </span>
+        <button
+          className="btn btn--ghost"
+          disabled={!pagination.next}
+          onClick={() => setCurrentPage(prev => prev + 1)}
+          style={{ opacity: !pagination.next ? 0.5 : 1 }}
+        >
+          Siguiente
+        </button>
       </div>
     </section>
   );

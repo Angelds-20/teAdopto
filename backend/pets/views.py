@@ -114,7 +114,13 @@ class AdoptionRequestViewSet(viewsets.ModelViewSet):
         serializer.save(user=user)
 
     def get_queryset(self):
-        if self.request.user.role == "admin":
+        user = self.request.user
+        if user.role == "admin":
             return AdoptionRequest.objects.all()
+        elif user.role == "shelter":
+            try:
+                return AdoptionRequest.objects.filter(pet__shelter__user=user) | AdoptionRequest.objects.filter(user=user)
+            except:
+                return AdoptionRequest.objects.filter(user=user)
         else:
-            return AdoptionRequest.objects.filter(user=self.request.user)
+            return AdoptionRequest.objects.filter(user=user)

@@ -4,8 +4,11 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pets from "./pages/Pets";
+import EditPet from "./pages/EditPet";
+import EditShelter from "./pages/EditShelter";
 import Shelters from "./pages/Shelters";
 import Users from "./pages/Users";
+import EditUser from "./pages/EditUser";
 import Adoptions from "./pages/Adoptions";
 import Donations from "./pages/Donations";
 import Angel from "./pages/Angel";
@@ -26,8 +29,11 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/pets" element={<Pets />} />
+                <Route path="/pets/edit/:id" element={<EditPet />} />
                 <Route path="/shelters" element={<Shelters />} />
+                <Route path="/shelters/edit/:id" element={<EditShelter />} />
                 <Route path="/users" element={<Users />} />
+                <Route path="/users/edit/:id" element={<EditUser />} />
                 <Route path="/adoptions" element={<Adoptions />} />
                 <Route path="/donations" element={<Donations />} />
               </Routes>

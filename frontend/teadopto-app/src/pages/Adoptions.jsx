@@ -22,8 +22,9 @@ export default function Adoptions() {
           api.get("adoptions/"),
           api.get("pets/"),
         ]);
-        setRequests(requestsRes.data);
-        setPets(petsRes.data);
+        const requestsData = requestsRes.data.results || requestsRes.data || [];
+        setRequests(Array.isArray(requestsData) ? requestsData : []);
+        setPets(petsRes.data.results || []);
       } catch (err) {
         const detail =
           err.response?.status === 401
